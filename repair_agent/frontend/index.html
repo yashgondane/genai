@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="api-port" content="5050" />
+  <title>RepairAgent — Autonomous Bug Repair</title>
+  <meta name="description" content="RepairAgent: Autonomous LLM-powered bug repair. Debug snippets or scan & repair entire local project directories." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ===================== SIDEBAR ===================== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">
+        <span class="logo-name">RepairAgent</span>
+        <span class="logo-version" id="app-version">v…</span>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <button class="nav-item active" data-page="debug" id="nav-debug">
+      <span class="nav-icon">🐛</span>Quick Debug
+    </button>
+    <button class="nav-item" data-page="folder" id="nav-folder">
+      <span class="nav-icon">📁</span>Folder Repair
+    </button>
+    <button class="nav-item" data-page="settings" id="nav-settings">
+      <span class="nav-icon">⚙️</span>Settings &amp; Keys
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="status-indicator" id="global-status">
+      <span class="status-dot"></span>
+      <span class="status-text">Checking server...</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ===================== MAIN CONTENT ===================== -->
+<main class="main" id="main">
+
+  <!-- ============================================================
+       PAGE 1: QUICK CODE DEBUGGER (Paste/Type & Debug)
+       ============================================================ -->
+  <div class="page active" id="page-debug">
+    <div class="page-header">
+      <h1>Quick Code Debugger</h1>
+      <p class="page-subtitle">Type or paste code in C++, Python, Java, JS, Rust, Go &amp; more — get instant root-cause analysis and fixed code.</p>
+    </div>
+
+    <div class="debug-layout">
+      <!-- Left: Editor & Options -->
+      <div class="debug-input-col">
+        <!-- Language Selector -->
+        <div class="card">
+          <div class="card-title-row">
+            <span class="card-title">Select Language</span>
+            <span class="badge" id="selected-lang-badge">Python</span>
+          </div>
+          <div class="lang-selector" id="lang-selector"></div>
+        </div>
+
+        <!-- Code Editor -->
+        <div class="card debug-editor-card">
+          <div class="card-title-row">
+            <span class="card-title">Code Editor</span>
+            <div class="card-actions">
+              <button class="btn btn-sm btn-secondary" onclick="loadSampleBugCode()">Load Sample</button>
+              <button class="btn btn-sm btn-secondary" onclick="clearDebugCode()">Clear</button>
+            </div>
+          </div>
+          <textarea id="debug-code" class="code-editor"
+            placeholder="// Paste or type your buggy code here..."
+            spellcheck="false"></textarea>
+        </div>
+
+        <!-- Optional Context & Controls -->
+        <div class="card">
+          <div class="card-title">Context &amp; Model <span style="font-weight:400;color:var(--text3);font-size:0.8rem">(optional)</span></div>
+          <div class="form-group">
+            <label>Bug Description / Error Message</label>
+            <textarea id="debug-description"
+              placeholder="e.g. 'Crashes on segmentation fault with negative index' or 'Logic error in sorting'"
+              rows="2"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1">
+              <label>Model</label>
+              <select id="debug-model"><option value="">Loading models…</option></select>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-launch" id="debug-btn" onclick="submitDebug()">
+          <span class="btn-icon">⚡</span> Analyze &amp; Fix Code
+        </button>
+      </div>
+
+      <!-- Right: Analysis Results & Metrics -->
+      <div class="debug-results-col">
+        <div class="card" id="debug-results-card">
+          <div class="empty-state" id="debug-empty-state">
+            <div class="empty-icon">🐛</div>
+            <div class="empty-title">Ready to Debug</div>
+            <div class="empty-desc">Paste your code on the left and click <strong>Analyze &amp; Fix Code</strong>.</div>
+          </div>
+
+          <div id="debug-output-panel" style="display:none">
+            <!-- Problem Metrics Summary Bar -->
+            <div class="metrics-bar" id="debug-metrics-bar">
+              <div class="metric-chip severity-chip" id="metric-severity">Severity: Medium</div>
+              <div class="metric-chip" id="metric-bug-type">Type: Logic Error</div>
+              <div class="metric-chip" id="metric-confidence">Confidence: High</div>
+            </div>
+
+            <!-- Root Cause Card -->
+            <div class="diagnosis-card" id="diagnosis-card">
+              <div class="diagnosis-title">🔍 Problem Identified</div>
+              <div class="diagnosis-root" id="debug-root-cause">Root cause goes here.</div>
+              <div class="diagnosis-desc" id="debug-explanation">Explanation goes here.</div>
+            </div>
+
+            <!-- Fix Details & Diffs -->
+            <div class="result-tabs">
+              <button class="result-tab active" data-tab="fixed-code" onclick="switchDebugTab('fixed-code')">Fixed Code</button>
+              <button class="result-tab" data-tab="diff" onclick="switchDebugTab('diff')">Diff View</button>
+              <button class="result-tab" data-tab="changes" onclick="switchDebugTab('changes')">Changes List</button>
+            </div>
+
+            <!-- Tab 1: Fixed Code -->
+            <div class="tab-pane active" id="tab-pane-fixed-code">
+              <div class="code-output-header">
+                <span id="debug-fixed-lang-label">Fixed Code</span>
+                <div class="card-actions">
+                  <button class="btn btn-sm btn-secondary" onclick="copyFixedCode()">📋 Copy Fixed Code</button>
+                  <button class="btn btn-sm btn-primary" onclick="applyFixedCodeToEditor()">✍️ Replace in Editor</button>
+                </div>
+              </div>
+              <pre class="code-display" id="debug-fixed-code"></pre>
+            </div>
+
+            <!-- Tab 2: Diff -->
+            <div class="tab-pane" id="tab-pane-diff">
+              <div class="diff-viewer" id="debug-diff-view"></div>
+            </div>
+
+            <!-- Tab 3: Changes List -->
+            <div class="tab-pane" id="tab-pane-changes">
+              <div class="changes-list" id="debug-changes-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       PAGE 2: FOLDER REPAIR AGENT (Local Directory on Laptop)
+       ============================================================ -->
+  <div class="page" id="page-folder">
+    <div class="page-header">
+      <h1>Local Folder Repair Agent</h1>
+      <p class="page-subtitle">Open any directory on your laptop. RepairAgent inspects the files, finds bugs, and applies accepted changes directly to disk.</p>
+    </div>
+
+    <div class="folder-layout">
+      <!-- Top / Left: Directory Configuration -->
+      <div class="card folder-config-card">
+        <div class="card-title-row">
+          <span class="card-title">Select Local Directory</span>
+          <span class="form-hint">Path on your laptop</span>
+        </div>
+
+        <div class="form-group">
+          <label>Directory Path</label>
+          <div class="input-with-action">
+            <input type="text" id="folder-path" placeholder="e.g. C:\Users\yashg\OneDrive\Desktop\genai\my_cpp_project" />
+            <button class="btn btn-secondary" onclick="useCurrentWorkspaceDir()">Use Current Workspace</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:2">
+            <label>Bug Description / Prompt <span style="font-weight:400;color:var(--text3)">(optional)</span></label>
+            <input type="text" id="folder-prompt" placeholder="e.g. 'Fix memory leaks in C++ files and check compilation errors'" />
+          </div>
+          <div class="form-group" style="flex:1">
+            <label>Model</label>
+            <select id="folder-model"><option value="">Loading models…</option></select>
+          </div>
+        </div>
+
+        <div class="form-actions-row">
+          <button class="btn btn-primary btn-launch" id="folder-scan-btn" onclick="scanLocalFolder()">
+            <span class="btn-icon">🔍</span> Scan &amp; Repair Directory
+          </button>
+        </div>
+      </div>
+
+      <!-- Results: Scanned Files & Diffs -->
+      <div class="card folder-results-card" id="folder-results-card">
+        <div class="empty-state" id="folder-empty-state">
+          <div class="empty-icon">📁</div>
+          <div class="empty-title">No Folder Scanned Yet</div>
+          <div class="empty-desc">Enter a local directory path above and click <strong>Scan &amp; Repair Directory</strong>.</div>
+        </div>
+
+        <div id="folder-results-panel" style="display:none">
+          <!-- Overview Header -->
+          <div class="folder-overview-banner">
+            <div class="overview-stats">
+              <div class="overview-stat">
+                <span class="overview-num" id="folder-stat-scanned">0</span>
+                <span class="overview-lbl">Files Scanned</span>
+              </div>
+              <div class="overview-stat highlight">
+                <span class="overview-num" id="folder-stat-issues">0</span>
+                <span class="overview-lbl">Files Needing Fixes</span>
+              </div>
+            </div>
+            <div class="overview-actions">
+              <button class="btn btn-success" id="apply-all-btn" onclick="applyAllFolderChanges()">
+                <span class="btn-icon">✓</span> Accept &amp; Apply All Changes to Disk
+              </button>
+              <button class="btn btn-secondary" id="revert-btn" onclick="revertFolderChanges()" title="Revert to backup">
+                <span>↺</span> Revert
+              </button>
+            </div>
+          </div>
+
+          <div class="folder-summary-text" id="folder-summary-text"></div>
+
+          <!-- Per-file Issues & Diffs List -->
+          <div class="file-issues-container" id="file-issues-container"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       PAGE 3: SETTINGS & API KEYS
+       ============================================================ -->
+  <div class="page" id="page-settings">
+    <div class="page-header">
+      <h1>Settings &amp; API Keys</h1>
+      <p class="page-subtitle">Configure free or paid API keys. All keys are stored safely in your local <code>.env</code> file.</p>
+    </div>
+
+    <div class="settings-grid">
+      <!-- API Keys Card -->
+      <div class="card">
+        <div class="card-title">LLM API Keys</div>
+        <p class="form-hint" style="margin-bottom:16px">You only need <strong>one</strong> of these to run RepairAgent!</p>
+
+        <!-- Google Gemini Free -->
+        <div class="form-group">
+          <div class="label-with-link">
+            <label>Google Gemini API Key <span class="badge badge-success">Recommended • Free Tier</span></label>
+            <a href="https://aistudio.google.com/apikey" target="_blank" class="free-link">Get Free Gemini Key ↗</a>
+          </div>
+          <input type="password" id="key-gemini" placeholder="AIzaSy..." />
+        </div>
+
+        <!-- Groq Free -->
+        <div class="form-group">
+          <div class="label-with-link">
+            <label>Groq API Key <span class="badge badge-success">Free Tier</span></label>
+            <a href="https://console.groq.com/keys" target="_blank" class="free-link">Get Free Groq Key ↗</a>
+          </div>
+          <input type="password" id="key-groq" placeholder="gsk_..." />
+        </div>
+
+        <!-- OpenAI -->
+        <div class="form-group">
+          <label>OpenAI API Key (Paid credits required)</label>
+          <input type="password" id="key-openai" placeholder="sk-..." />
+        </div>
+
+        <!-- Anthropic -->
+        <div class="form-group">
+          <label>Anthropic Claude API Key</label>
+          <input type="password" id="key-anthropic" placeholder="sk-ant-..." />
+        </div>
+
+        <button class="btn btn-primary" onclick="saveApiKeys()">
+          <span class="btn-icon">💾</span> Save Keys
+        </button>
+        <span id="keys-save-status" class="save-status"></span>
+      </div>
+
+      <!-- Environment / Server Health -->
+      <div class="card">
+        <div class="card-title">Server Health &amp; Environment</div>
+        <div class="env-checks" id="env-checks">
+          <div class="env-loading">Loading status…</div>
+        </div>
+        <div style="margin-top:16px">
+          <button class="btn btn-sm btn-secondary" onclick="refreshStatus()">
+            <span>↻</span> Refresh Status
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Notification Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

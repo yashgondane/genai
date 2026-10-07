@@ -1,0 +1,62 @@
+{
+  "_comment": "Central config for RepairAgent. Change values here, they propagate everywhere automatically.",
+
+  "version": "0.6.5",
+  "api_port": 5050,
+  "api_host": "0.0.0.0",
+  "api_debug": true,
+
+  "gemini_models": [
+    {"id": "gemma-4-26b-a4b-it", "name": "Google Gemma 4 (Free Tier)",   "desc": "Google Gemma 4 Code Model", "provider": "gemini"},
+    {"id": "gemini-flash-latest","name": "Gemini Flash Latest (Free)",    "desc": "Fastest Gemini model",      "provider": "gemini"},
+    {"id": "gemini-1.5-flash",    "name": "Gemini 1.5 Flash (Free Tier)", "desc": "Fast, high limit free tier", "provider": "gemini"},
+    {"id": "gemini-1.5-pro",      "name": "Gemini 1.5 Pro (Free Tier)",   "desc": "Deep reasoning & analysis",  "provider": "gemini"}
+  ],
+
+  "groq_models": [
+    {"id": "llama-3.3-70b-versatile", "name": "Llama 3.3 70B (Groq Free)", "desc": "Powerful coding LLM", "provider": "groq"},
+    {"id": "llama-3.1-8b-instant",    "name": "Llama 3.1 8B (Groq Free)",  "desc": "Ultra-fast inference", "provider": "groq"}
+  ],
+
+  "openai_models": [
+    {"id": "gpt-4o",       "name": "GPT-4o",       "desc": "Most capable OpenAI model",  "provider": "openai"},
+    {"id": "gpt-4o-mini",  "name": "GPT-4o mini",  "desc": "Fast and affordable",         "provider": "openai"},
+    {"id": "gpt-3.5-turbo","name": "GPT-3.5 Turbo","desc": "Legacy OpenAI model",        "provider": "openai"}
+  ],
+
+  "anthropic_models": [
+    {"id": "claude-sonnet-4-20250514", "name": "Claude Sonnet 4", "desc": "Balanced speed/quality", "provider": "anthropic"},
+    {"id": "claude-haiku-4-20250414",  "name": "Claude Haiku 4",  "desc": "Fastest, lowest cost",   "provider": "anthropic"}
+  ],
+
+  "benchmark": {
+    "description": "State-of-the-art comparison on Defects4J (from ICSE 2025 paper)",
+    "tools": [
+      {"name": "RepairAgent", "fixes": 164, "year": 2024, "highlight": true},
+      {"name": "ChatRepair",  "fixes": 162, "year": 2024, "highlight": false},
+      {"name": "SelfAPR",     "fixes": 110, "year": 2023, "highlight": false},
+      {"name": "ITER",        "fixes": 107, "year": 2023, "highlight": false},
+      {"name": "AlphaRepair", "fixes": 100, "year": 2022, "highlight": false},
+      {"name": "Recoder",     "fixes": 68,  "year": 2021, "highlight": false}
+    ]
+  },
+
+  "supported_languages": [
+    {"id": "python",     "label": "Python",     "icon": "🐍", "color": "#3776ab"},
+    {"id": "java",       "label": "Java",       "icon": "☕",  "color": "#f89820"},
+    {"id": "c",          "label": "C",          "icon": "C",   "color": "#6d94c2"},
+    {"id": "cpp",        "label": "C++",        "icon": "C++", "color": "#00599c"},
+    {"id": "javascript", "label": "JavaScript", "icon": "JS",  "color": "#f0db4f"},
+    {"id": "typescript", "label": "TypeScript", "icon": "TS",  "color": "#3178c6"},
+    {"id": "go",         "label": "Go",         "icon": "🐹", "color": "#00add8"},
+    {"id": "rust",       "label": "Rust",       "icon": "🦀", "color": "#ce412b"},
+    {"id": "csharp",     "label": "C#",         "icon": "C#",  "color": "#7b5ea7"},
+    {"id": "ruby",       "label": "Ruby",       "icon": "💎", "color": "#cc342d"},
+    {"id": "swift",      "label": "Swift",      "icon": "🦅", "color": "#f05138"},
+    {"id": "kotlin",     "label": "Kotlin",     "icon": "K",   "color": "#7f52ff"},
+    {"id": "bash",       "label": "Bash",       "icon": "$",   "color": "#4eaa25"},
+    {"id": "php",        "label": "PHP",        "icon": "PHP", "color": "#777bb4"}
+  ],
+
+  "windows_git_bin": "C:\\Program Files\\Git\\usr\\bin"
+}

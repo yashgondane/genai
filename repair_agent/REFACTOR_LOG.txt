@@ -1,0 +1,94 @@
+﻿================================================================================
+REPAIRAGENT CODEBASE REFACTORING LOG
+================================================================================
+GOAL: 
+  1. Remove ALL hardcoded values from the codebase (single source of truth in config.json).
+  2. Radically simplify the frontend UX for practical developer use:
+     - Quick Code Debugger: Copy-paste/type code in any language (C++, Python, Java, JS, Rust, Go, C, etc.) with instant problem metrics, root cause diagnosis, unified diffs, and 1-click replace.
+     - Local Folder Repair Agent: Point to ANY directory on the user's laptop, auto-scan files, analyze bugs across the project, display per-file problem metrics + diffs, and provide a 1-click 'Accept & Apply Changes to Disk' (with automatic backup & revert).
+     - Settings & API Keys: Clean key management and health status.
+
+WHAT TRIGGERED THIS TASK:
+  - User requested removing unnecessary research tabs (Defects4J project pickers, legacy experiment folders, hardcoded academic benchmarks).
+  - User wanted simple, direct code debugging by typing or copy-pasting.
+  - User wanted to point the agent directly to any directory on their laptop, get suggested fixes with problem metrics, and accept & replace changes directly in their actual project files.
+
+================================================================================
+ARCHITECTURE & NEW CAPABILITIES
+================================================================================
+1. Central Configuration (repair_agent/config.json):
+   - Single source of truth for version, host/port, models, supported languages, benchmarks, and paths.
+
+2. REST Endpoints in api_server.py:
+   - GET  /api/config            -> Returns full config.json dynamically
+   - GET  /api/models            -> Returns active models based on saved API keys
+   - GET  /api/status            -> Returns Python, environment, and API key status
+   - POST /api/keys              -> Saves OpenAI & Anthropic keys to local .env
+   - POST /api/debug             -> Quick code debugger (accepts code snippet, language, description; returns root cause, problem metrics, severity, full fixed code, unified diff)
+   - POST /api/project/scan      -> Local folder repair (scans directory from laptop, detects source files, analyzes with LLM, outputs per-file problems, severity, root cause, and git-style unified diffs)
+   - POST /api/project/apply     -> Writes accepted fixes directly to the files on disk with automatic timestamped backups in .repairagent_backups/
+   - POST /api/project/revert    -> Reverts applied files from backup snapshot
+
+3. Simplified Frontend (frontend/index.html & app.js & style.css):
+   - Sidebar with 3 focused tabs:
+     [1] Quick Debug: Instant code editor with language pills (C++, Python, Java, JS, TS, Rust, Go, C, etc.), sample loader, metrics chips (Severity, Type, Confidence), root cause card, diff viewer, and 'Replace in Editor' / 'Copy Fixed Code' actions.
+     [2] Folder Repair: Directory input for any local project, optional instructions, scan button, overview stats banner, per-file issue cards with diffs, individual file apply buttons, and 'Accept & Apply All Changes to Disk'.
+     [3] Settings & Keys: API key management and server health checks.
+
+================================================================================
+COMPLETE LIST OF HARDCODED ITEMS & RESOLUTION STATUS
+================================================================================
+  [HC-01] Version badge                           -> Dynamic from config.json
+  [HC-02] Hardcoded stats / benchmark table       -> Removed from main UI / loaded from config.json
+  [HC-03] Fixed API URL (localhost:5050)          -> Dynamic detection (_detectApiBase)
+  [HC-04] Duplicated model lists                  -> Single source in config.json
+  [HC-05] Supported programming languages         -> Loaded dynamically from config.json
+  [HC-06] Static Defects4J project selection UI   -> Replaced with flexible Local Folder Repair Agent
+  [HC-07] Manual file editing                     -> Automated with 1-click 'Accept & Apply to Disk'
+
+================================================================================
+FILES STATUS
+================================================================================
+ALL COMPLETE & VERIFIED:
+  [x] config.json            - Single source of truth (version, ports, models, languages, paths)
+  [x] api_server.py          - Direct frontend serving, /api/debug, /api/project/scan, /api/project/apply, /api/project/revert
+  [x] repairagent.py         - Reads central config.json for all constants
+  [x] frontend/index.html    - Simplified 3-tab layout (Quick Debug, Folder Repair, Settings)
+  [x] frontend/app.js        - Complete logic for snippet debugging and 1-click local folder repair
+  [x] frontend/style.css     - Sleek cyberpunk/glassmorphic theme with diff highlighting, metric chips, and toast notifications
+
+================================================================================
+HOW TO RUN
+================================================================================
+1. Run server:
+     python api_server.py
+2. Open browser:
+     http://localhost:5050
+
+================================================================================
+CHANGE LOG
+================================================================================
+[2026-10-07 19:13] Initial refactoring log created.
+[2026-10-07 19:14] config.json created. Hardcoded constants centralized.
+[2026-10-07 19:15] api_server.py and repairagent.py updated to read config.json.
+[2026-10-07 19:24] Flask direct frontend serving implemented on '/'.
+[2026-10-07 19:27] Supported languages centralized in config.json.
+[2026-10-07 19:35] Major UX Simplification & Local Directory Repair Implementation:
+                   - Replaced cluttered research tabs with a 3-tab interface: Quick Debug, Folder Repair, Settings.
+                   - Added backend endpoints /api/project/scan, /api/project/apply, and /api/project/revert in api_server.py.
+                   - Implemented 1-click 'Accept & Apply Changes to Disk' with automated backup snapshotting.
+                   - Added rich problem metrics (Severity, Root Cause, Issue Type, Confidence) and unified diff views.
+                   - Updated frontend/index.html, frontend/app.js, frontend/style.css.
+[2026-10-07 19:43] OpenAI SDK v0.27 Compatibility Fix:
+                   - Fixed AttributeError (module 'openai' has no attribute 'OpenAI') by supporting both legacy openai < 1.0.0 (v0.27/v0.28) and modern openai >= 1.0.0.
+                   - Added robust JSON substring parser fallback.
+                   - Tested live API connectivity.
+[2026-10-07 19:51] Complete Repository Cleanup:
+                   - Removed 60+ legacy academic research files (autogpt/, defects4j/, ANTLR parser, benchmarks, etc.).
+                   - Cleaned project down to 5 essential components: api_server.py, config.json, frontend/, requirements.txt, .env.
+                   - Project is now 100% focused, lightweight, and easy to maintain.
+[2026-10-07 19:55] Added Free Tier Providers (Google Gemini & Groq):
+                   - Added native Google Gemini REST API support with structured JSON mode (gemini-1.5-flash, gemini-2.0-flash, gemini-1.5-pro).
+                   - Added Groq Cloud REST API support with fast JSON mode (llama-3.3-70b-versatile, llama-3.1-8b-instant).
+                   - Updated Settings UI with 1-click links to obtain free Gemini / Groq API keys.
+                   - Zero credit balance / zero cost required to debug and repair code.
